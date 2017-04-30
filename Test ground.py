@@ -17,13 +17,22 @@ table=dict((ord(char),u' ')for char in not_letters_or_numbers)
 with open('semantics.json') as semantics_file:
     semantics=json.load(semantics_file)
 
-posWords=semantics['positive']
+print "len: ", len(semantics['positive'])
+posWords= [semantics['positive'][1]['phrase']]
+for pos in posWords:
+    print pos
 
-for phrase in posWords:
+'''li=[['lunch','food','dinner'],['staff','personnel']]
+for l in li:
+    if 'lunch' in l :
+        print l'''
+
+
+'''for phrase in posWords:
     if 'good' in phrase['phrase']:
         print phrase['value']
         break
-    else: print "no good word"
+    else: print "no good word"'''
 #print posWords
 
 #with open('reviews1.json') as data_file:

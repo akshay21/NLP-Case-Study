@@ -54,7 +54,12 @@ for review in reviews:
     sent_token(tokens)
 
 for sent in sentences:
-    words=sent.strip().split()
+    doc = lang_client.document_from_text(sent)
+    senti = doc.analyze_sentiment().sentiment
+    print "senti.score: ",senti.score
+    print "senti.mag: ", senti.magnitude
+
+    '''words=sent.strip().split()
     posCnt=0
     for word in words:
         if word in posWords:
@@ -63,5 +68,5 @@ for sent in sentences:
             print "word: ",word," Value: ", val
         if word in intesifiers:
             multi = intesifiers.index(word)
-            multi
+            multi'''
 
