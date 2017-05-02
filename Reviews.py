@@ -1,76 +1,98 @@
 import json
 from nltk.tokenize import sent_tokenize
-from google.cloud import language
+
+class parser:
+    Topic = ''
+    sentences = []
+    file_name = ""
+    hotel_name = ""
+    hotel_id = 0
 
 
-#Creating semantics
-with open('semantics.json') as semantics_file:
-    semantics = json.load(semantics_file)
+    with open('semantics.json') as semantics_file:
+        semantics = json.load(semantics_file)
+    semantics_file.close
 
-posWords = [semantics['positive'][i]['phrase'] for i in range(len(semantics['positive']))]
-posVals = [semantics['positive'][i]['value'] for i in range(len(semantics['positive']))]
+    posWords = [semantics['positive'][i]['phrase'] for i in range(len(semantics['positive']))]
+    posVals = [semantics['positive'][i]['value'] for i in range(len(semantics['positive']))]
 
-intensifiers = [semantics['intensifier'][i]['phrase'] for i in range(len(semantics['intensifier']))]
-intensifierVals = [semantics['intensifier'][i]['multiplier'] for i in range(len(semantics['intensifier']))]
+    intensifiers = [semantics['intensifier'][i]['phrase'] for i in range(len(semantics['intensifier']))]
+    intensifierVals = [semantics['intensifier'][i]['multiplier'] for i in range(len(semantics['intensifier']))]
 
-lang_client = language.Client()
+    negWords = [semantics['negative'][i]['phrase'] for i in range(len(semantics['negative']))]
+    negVals = [semantics['negative'][i]['value'] for i in range(len(semantics['negative']))]
 
-with open('reviews1.json') as data_file:
-    data = json.load(data_file)
-info = data['HotelInfo']
-hotel_name = info['Name']
-print "Hotel Name: ",hotel_name
-reviews = data['Reviews']
+    topic_list = [['lunch', 'food', 'dinner', 'breakfast','restaurant','eat', 'bar'],\
+                  ['staff', 'personnel', 'work froce', 'workers','concierge']]
 
-topic = 'breakfast'
-pos_count = 0
-pos_val = 0.0
-neg_count = 0
-neg_val = 0.0
-total_count = 0
 
-def topic_finder():
-    topic_list = [['lunch','food','dinner','breakfast'],['staff','personnel']]
-    for l in topic_list:
-        if topic in l :
-            return l
+    def __init__(self, file_name, topic):
+        parser.file_name = file_name
+        parser.Topic = topic
+        parser.sentences = []
 
-sentences=[]
+    def analysis(self, sentences, total_count):
+        posCnt = 0
+        negCnt = 0
+        for sentence in sentences:
+            score = 0
+            words = sentence.strip().split()
+            multiplier = 1
+            for word in words:
+                if word in parser.intensifiers:
+                    multi = parser.intensifiers.index(word)
+                    multiplier = parser.intensifierVals[multi]
+                    # print "multiplier: ",word," value: ", multiplier
+                elif word in parser.posWords:
+                    i = parser.posWords.index(word)
+                    val = parser.posVals[i]
+                    score += val * multiplier
+                    multiplier = 1
+                elif word in parser.negWords:
+                    i = parser.negWords.index(word)
+                    val = parser.negVals[i]
+                    score -= val * multiplier
+                    multiplier = 1
+                else:
+                    multiplier = 1
+            if score > 0:
+                posCnt = posCnt + 1
+            else:
+                negCnt = negCnt + 1
+        # return score
+        #print "pos count: ", posCnt
+        #print "neg count: ", negCnt
+        return posCnt, negCnt
 
-def sent_token(tokens):
-    topics = topic_finder()
-    for sentence in tokens:
-        not_letters_or_numbers = u"!,.?()-'$"
-        table = dict((ord(char), u' ') for char in not_letters_or_numbers)
-        token = sentence.translate(table)
-        for key_word in topics:
-            if key_word in token:
-                sentences.append(token)
-                break
+    def topic_finder(self):
+        for l in self.topic_list:
+            if self.Topic in l:
+                return l
 
-for review in reviews:
-    content = review['Content']
-    tokens = sent_tokenize(content)
-    tokens = [t.lower() for t in tokens]
-    sent_token(tokens)
+    def sent_token(self, tokens):
+        topics = self.topic_finder()
+        for sentence in tokens:
+            not_letters_or_numbers = u"!,.?()-'$"
+            table = dict((ord(char), u' ') for char in not_letters_or_numbers)
+            token = sentence.translate(table)
+            for key_word in topics:
+                if key_word in token:
+                    self.sentences.append(token)
+                    break
 
-for sentence in sentences:
-    print sentence
-    words = sentence.strip().split()
-    posCnt = 0
-    multiplier = 1
-    for word in words:
-        if word in intensifiers:
-            multi = intensifiers.index(word)
-            multiplier = intensifierVals[multi]
-            print "multiplier: ",word," value: ", multiplier
-        elif word in posWords:
-            i = posWords.index(word)
-            val = posVals[i]
-            pos_val = val*multiplier
-            print "positive word: ",word," value: ", pos_val
-            pos_count = pos_count + 1
-            #print "positive count: ", pos_count
-            total_count= total_count + 1
-            #print "Total count: ", total_count
+
+
+    def getReviews(self):
+        with open('D:/MS/NLP Case Study/Data/'+self.file_name, "r") as data_file:
+            data = json.load(data_file)
+        info = data['HotelInfo']
+        self.hotel_id = info['HotelID']
+        print "Hotel ID: ", self.hotel_id
+        reviews = data['Reviews']
+        data_file.close
+        for review in reviews:
+            content = review['Content']
+            tokens = sent_tokenize(content)
+            tokens = [t.lower() for t in tokens]
+            self.sent_token(tokens)
 
