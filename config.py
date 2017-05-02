@@ -1,16 +1,18 @@
+# install these packages if not already present.
 from Reviews import parser
-from nltk import sent_tokenize
+import numpy as np
+import matplotlib.pyplot as plt
 
+#The files with reviews
 file_list = ["reviews1.json","reviews2.json","reviews3.json","reviews4.json","reviews5.json"]
 
-topic="breakfast"
-
-print "list len: ",len(file_list)
+#The topic you want search like, breakfast or spa or location
+topic=raw_input("Please enter the topic you want to search: ")
 
 results =[]
 
-def cal(hotelId, pos_count, neg_count):
-    rating=float(pos_count)/float(pos_count+neg_count)
+#Collecting results.
+def cal(hotelId, pos_count, neg_count, rating):
     tmp={'hotelID': hotelId, 'pos_count':pos_count, 'neg_count':neg_count, 'rating': rating}
     results.append(tmp)
 
@@ -24,6 +26,7 @@ for file in file_list:
 
 print "Results: ", results
 
+""" Finding the best hotel for given topic"""
 max_rating=0.0
 best_hotel=0
 for result in results:
@@ -33,4 +36,15 @@ for result in results:
 print best_hotel,"is the best hotel for the topic: ",topic, "with rating of", max_rating, "out of 1"
 
 
+""" Ploting graph for better understanding of the results"""
+hotel_list=([result['hotelID'] for result in results])
+y_pos= np.arange(len(hotel_list))
+ratings=[result['rating'] for result in results]
 
+plt.bar(y_pos,ratings, align='center', alpha=0.5)
+plt.xticks(y_pos,hotel_list)
+plt.xlabel('Hotel IDs')
+plt.ylabel('Hotel Rating')
+plt.title(' Hotel ratings comparision')
+
+plt.show()
